@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+  mapRoles: |
+    - groups:
+      - system:bootstrappers
+      - system:nodes
+      rolearn: arn:aws:iam::<your-aws-accoun-id>:role/eksctl-<your-aws-cluster-name>-nodegroup-managed-NodeInstanceRole-AAAAAAADDDDCCC
+      username: system:node:{{EC2PrivateDNSName}}
+    - groups:
+      - system:bootstrappers
+      - system:nodes
+      rolearn: arn:aws:iam::<your-aws-accoun-id>:role/eksctl-<your-aws-cluster-name>-nodegroup-staging-NodeInstanceRole-AAAAAAADDDDCCC
+      username: system:node:{{EC2PrivateDNSName}}
+  mapUsers: |
+    - userarn: arn:aws:iam::<your-aws-accoun-id>:user/gitlab 
+      username: gitlab 
+      groups: 
+        - system:masters
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
