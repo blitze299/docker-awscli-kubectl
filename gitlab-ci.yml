@@ -1,0 +1,43 @@
+stages:
+  - build
+  - staging
+  - production
+
+variables:
+  DEPLOYMENT_NAME: <your-project-name>
+  DOCKER_REGISTRY: <your-ecr-registty>/$DEPLOYMENT_NAME
+
+build:
+  stage: build
+  image: docker:19.03.1
+  variables:
+    DOCKER_DRIVER: overlay
+    DOCKER_HOST: tcp://localhost:2375
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - docker:19.03.1-dind
+  before_script:
+    - docker info
+    - apk add --no-cache curl jq python py-pip
+    - pip install awscli
+  script:
+    - $(aws ecr get-login --no-include-email --region <your-aws-region>)
+    - docker build -t $DOCKER_REGISTRY:$CI_COMMIT_TAG .
+    - docker push $DOCKER_REGISTRY:$CI_COMMIT_TAG
+  only:
+    - tags
+
+.kubectl_config: &kubectl_config
+  - aws eks --region <your-aws-region> update-kubeconfig --name <your-aws-cluster-name>
+
+staging:
+  image: docker.io/sulemanhasib43/eks:latest
+  stage: staging
+  variables:
+    K8S_NAMESPACE: <your-desired-k8s-namespace>
+  before_script: *kubectl_config
+  script:
+    - kubectl version
+    - kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '{"spec":{"template":{"spec":{"containers":[{"name":"'"$DEPLOYMENT_NAME"'","image":"'"$DOCKER_REGISTRY:$CI_COMMIT_TAG"'"}]}}}}'
+  only:
+    - tags
