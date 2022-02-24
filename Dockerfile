@@ -1,6 +1,6 @@
-FROM alpine:latest
+FROM alpine:3.15.0
 
-MAINTAINER Suleman Hasib
+MAINTAINER Moritz Beck
 
 RUN apk add --no-cache curl jq python py-pip && \
     pip install awscli && \
